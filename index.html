@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jogo de Reações Orgânicas</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+            color: #333;
+        }
+        #start, #game, #endgame {
+            text-align: center;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0px 0px 10px rgba(0,0,0,0.1);
+            width: 90%;
+            max-width: 600px;
+        }
+        #game, #endgame {
+            display: none;
+        }
+        #question, #result {
+            margin-bottom: 20px;
+        }
+        #result {
+            padding: 10px;
+            border: 3px solid #007BFF;
+            border-radius: 5px;
+            font-family: 'Times New Roman', Times, serif;
+            color: black;
+            font-weight: 900;
+        }
+        .choice {
+            display: block;
+            margin: 10px 0;
+            padding: 10px;
+            border: 1px solid #007BFF;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .choice:hover {
+            background-color: #007BFF;
+            color: #fff;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            border: none;
+            border-radius: 5px;
+            background-color: #007BFF;
+            color: #fff;
+            cursor: pointer;
+        }
+        #endgame {
+            display: none;
+            text-align: center;
+            animation: fadeIn 2s;
+        }
+        #scoreboard {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        #timer {
+            padding: 10px;
+            border: 1px solid #007BFF;
+            border-radius: 5px;
+        }
+        .pontos {
+            padding: 10px;
+            border: 1px solid #007BFF;
+            border-radius: 5px;
+        }
+        @keyframes fadeIn {
+            0% {opacity:0;}
+            100% {opacity:1;}
+        }
+    </style>
+</head>
+<body>
+    <div id="start">
+        <h1>Bem-vindo ao Jogo de Reações Orgânicas</h1>
+        <button onclick="startGame()">Iniciar jogo</button>
+    </div>
+    <div id="game">
+        <h1>Jogo de Reações Orgânicas</h1>
+        <div id="scoreboard">
+            <div class="pontos">Pontuação: <span id="score">0</span></div>
+            <div id="timer">Tempo restante: <span id="time">15</span></div>
+        </div>
+        <div id="question"></div>
+        <div id="choices"></div>
+        <div>
+            <button id="checkButton" onclick="checkAnswer()">Verificar resposta</button>
+            <button onclick="resetGame()">Resetar jogo</button>
+        </div>
+        <div id="result"></div>
+    </div>
+    <div id="endgame">
+        <h1 id="endgameTitle"></h1>
+        <p id="endgameScore"></p>
+        <button onclick="resetGame()">Jogar novamente</button>
+    </div>
+    
+    <script>
+        var reactions = [
+            { description: "Esta reação orgânica envolve a substituição de um átomo de hidrogênio por um halogênio.", name: "Halogenação" },
+            { description: "Esta é uma reação de desidratação de álcoois para formar éteres.", name: "Reação de Williamson" },
+            { description: "Esta reação envolve a formação de um éster a partir de um ácido carboxílico e um álcool.", name: "Esterificação" },
+            { description: "Esta reação envolve a quebra de um éster em um ácido carboxílico e um álcool.", name: "Hidrólise de éster" },
+            { description: "Esta reação envolve a adição de um halogênio a uma ligação dupla em um alceno.", name: "Halogenação de alcenos" },
+            { description: "Esta reação envolve a adição de água a uma ligação dupla em um alceno para formar um álcool.", name: "Hidratação de alcenos" },
+            { description: "Esta reação envolve a adição de um grupo hidroxila a um alceno para formar um álcool.", name: "Hidroxilação de alcenos" },
+            { description: "Esta reação envolve a adição de um grupo nitro a um composto aromático.", name: "Nitração aromática" },
+            { description: "Esta reação envolve a substituição de um grupo hidroxila por um grupo cloro.", name: "Cloração de álcoois" },
+            { description: "Esta reação envolve a formação de um aldeído a partir de um álcool primário.", name: "Oxidação de álcoois" },
+            // Adicione mais reações aqui
+        ];
+        var currentReactions;
+        var currentReaction;
+        var score = 0;
+        var totalQuestions = 10;
+        var questionCount = 0;
+        var timer;
+        var answered = false;
+
+        function loadQuestion() {
+            if (currentReactions.length === 0) {
+                currentReactions = shuffle(reactions.slice());
+            }
+            currentReaction = currentReactions.pop();
+            document.getElementById('question').innerText = currentReaction.description;
+            var choices = reactions.map(function(reaction) { return reaction.name; });
+            choices = shuffle(choices).slice(0, 4);
+            if (choices.indexOf(currentReaction.name) === -1) {
+                choices[0] = currentReaction.name;
+                choices = shuffle(choices);
+            }
+            var choicesHTML = choices.map(function(choice) {
+                return '<label class="choice"><input type="radio" name="reaction" value="' + choice + '"> ' + choice + '</label>';
+            }).join('');
+            document.getElementById('choices').innerHTML = choicesHTML;
+            document.getElementById('checkButton').disabled = false;
+            startTimer();
+            answered = false;
+        }
+
+        function checkAnswer() {
+            if (!answered) {
+                answered = true;
+                clearTimeout(timer);
+                var userAnswer = document.querySelector('input[name="reaction"]:checked');
+                if (userAnswer && userAnswer.value === currentReaction.name) {
+                    document.getElementById('result').innerText = "Correto!";
+                    score++;
+                } else {
+                    document.getElementById('result').innerText = "Incorreto. A resposta correta era: " + currentReaction.name;
+                }
+                document.getElementById('score').innerText = score;
+                document.getElementById('checkButton').disabled = true;
+                questionCount++;
+                if (questionCount >= totalQuestions) {
+                    endGame();
+                } else {
+                    setTimeout(nextQuestion, 2000);
+                }
+            }
+        }
+
+        function nextQuestion() {
+            document.getElementById('result').innerText = 'Resultado';
+            loadQuestion();
+        }
+
+        function startGame() {
+            score = 0;
+            questionCount = 0;
+            currentReactions = [];
+            document.getElementById('score').innerText = score;
+            document.getElementById('start').style.display = 'none';
+            document.getElementById('game').style.display = 'block';
+            document.getElementById('endgame').style.display = 'none';
+            nextQuestion();
+        }
+
+        function resetGame() {
+            clearTimeout(timer);
+            document.getElementById('start').style.display = 'block';
+            document.getElementById('game').style.display = 'none';
+            document.getElementById('endgame').style.display = 'none';
+        }
+
+        function endGame() {
+            document.getElementById('game').style.display = 'none';
+            document.getElementById('endgame').style.display = 'block';
+            document.getElementById('endgameScore').innerText = "Você acertou " + score + " de " + totalQuestions + " perguntas.";
+            if (score > totalQuestions / 2) {
+                document.getElementById('endgameTitle').innerText = "Parabéns!";
+            } else {
+                document.getElementById('endgameTitle').innerText = "Tente novamente!";
+            }
+        }
+
+        function startTimer() {
+            var time = 30;
+            document.getElementById('time').innerText = time;
+            timer = setInterval(function() {
+                time--;
+                document.getElementById('time').innerText = time;
+                if (time <= 0) {
+                    clearTimeout(timer);
+                    if (!answered) {
+                        checkAnswer();
+                    }
+                }
+            }, 1000);
+        }
+
+        function shuffle(array) {
+            var currentIndex = array.length, temporaryValue, randomIndex;
+            while (0 !== currentIndex) {
+                randomIndex = Math.floor(Math.random() * currentIndex);
+                currentIndex -= 1;
+                temporaryValue = array[currentIndex];
+                array[currentIndex] = array[randomIndex];
+                array[randomIndex] = temporaryValue;
+            }
+            return array;
+        }
+    </script>
+</body>
+</html>
+
